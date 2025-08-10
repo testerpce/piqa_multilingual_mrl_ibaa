@@ -12,6 +12,8 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from typing import List
 
+
+
 def load_hf_lm(name: str):
     """
     Loads a Hugging Face model and tokenizer, optimized for GPU usage.
@@ -80,6 +82,7 @@ def call_hf_llm_batch(model, tokenizer, queries: List[str], max_new_tokens: int 
         prompt_batch, 
         return_tensors="pt", 
         padding=True, 
+        padding_side='left',
         truncation=True
     ).to(model.device)
 
@@ -101,6 +104,7 @@ def call_hf_llm_batch(model, tokenizer, queries: List[str], max_new_tokens: int 
     generated_texts = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
 
     return generated_texts
+
 
 
 

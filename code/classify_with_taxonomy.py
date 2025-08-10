@@ -1,3 +1,12 @@
+import os
+cache_dir = "/workspace/huggingface_cache"
+os.environ["HF_HOME"] = cache_dir
+os.environ["HF_HUB_CACHE"] = os.path.join(cache_dir, "hub")
+os.environ["TRANSFORMERS_CACHE"] = os.path.join(cache_dir, "models")
+
+# Ensure the cache directory exists
+os.makedirs(cache_dir, exist_ok=True)
+
 import pandas as pd
 import argparse
 import json

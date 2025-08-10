@@ -11,3 +11,6 @@ wandb>=0.15.0
 psutil>=5.8.0 
 mlx>=0.26.5
 mlx-lm>=0.26.0
+accelerate>=1.5.0
+bitsandbytes>=0.45.0
+pandas>=2.2.0
