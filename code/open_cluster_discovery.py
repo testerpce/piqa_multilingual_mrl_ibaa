@@ -15,7 +15,7 @@ DATA_DIR = "data" # Directory to save outputs
 def get_args():
     parser = argparse.ArgumentParser(description="MLX LM Dataset and Model Loader")
     parser.add_argument("--dataset", type=str, default="baber/piqa", help="Name of the dataset to load")
-    parser.add_argument("--model", type=str, default="mlx-community/Qwen3-30B-A3B-Instruct-2507-6bit", help="Name of the mlx_lm model to load")  
+    parser.add_argument("--model", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Name of the mlx_lm model to load")  
     parser.add_argument("--em_model", type=str, default='Qwen/Qwen3-Embedding-0.6B', help="Embedding model to help with classification and embedding")
     args = parser.parse_args()
     

@@ -50,7 +50,7 @@ def main():
 
     # --- 1. Load Model, Taxonomy, and Data ---
     print("Loading model into GPU memory...")
-    lm_model, lm_tokenizer = load_mlx_lm(args.model)
+    lm_model, lm_tokenizer = load_hf_lm(args.model)
 
     print(f"Loading taxonomy from {args.taxonomy_file}...")
     if not os.path.exists(args.taxonomy_file):
@@ -77,7 +77,7 @@ def main():
         batch_prompts = all_prompts[i:i + args.batch_size]
         
         # This is the key step: sending a whole batch to the GPU
-        batch_responses_str = call_mlx_llm_batch(lm_model, lm_tokenizer, batch_prompts)
+        batch_responses_str = call_hf_llm_batch(lm_model, lm_tokenizer, batch_prompts)
         
         batch_classifications = [clean_json_response(resp) for resp in batch_responses_str]
         all_classifications.extend(batch_classifications)

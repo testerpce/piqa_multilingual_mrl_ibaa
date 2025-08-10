@@ -8,6 +8,101 @@ import json
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from typing import List
+
+def load_hf_lm(name: str):
+    """
+    Loads a Hugging Face model and tokenizer, optimized for GPU usage.
+
+    Args:
+        name (str): The name of the model on the Hugging Face Hub.
+
+    Returns:
+        A tuple containing the loaded model and tokenizer.
+    """
+    # Check if a GPU is available and set the device accordingly.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+
+    # For very large models, you might need to load in 4-bit or 8-bit to fit on the GPU.
+    # This can be enabled with a quantization config.
+    # bnb_config = BitsAndBytesConfig(
+    #     load_in_4bit=True,
+    #     bnb_4bit_quant_type="nf4",
+    #     bnb_4bit_compute_dtype=torch.bfloat16
+    # )
+
+    print(f"Loading model: {name}...")
+    model = AutoModelForCausalLM.from_pretrained(
+        name,
+        torch_dtype=torch.bfloat16, # Use bfloat16 for better performance on modern GPUs
+        device_map="auto", # Automatically distributes the model across available GPUs
+        # quantization_config=bnb_config # Uncomment to use 4-bit quantization
+    )
+    
+    print("Loading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(name)
+
+    # Set a padding token if one isn't already defined. This is crucial for batching.
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    return model, tokenizer
+
+
+def call_hf_llm_batch(model, tokenizer, queries: List[str], max_new_tokens: int = 512) -> List[str]:
+    """
+    Generates responses for a batch of queries using a Hugging Face model.
+
+    Args:
+        model: The loaded Hugging Face model.
+        tokenizer: The loaded Hugging Face tokenizer.
+        queries (List[str]): A list of query strings to generate responses for.
+        max_new_tokens (int): The maximum number of new tokens to generate for each query.
+
+    Returns:
+        A list of generated text responses, corresponding to the input queries.
+    """
+    # Format all queries into the standard chat format.
+    # The input is a list of message lists.
+    messages_batch = [[{"role": "user", "content": query}] for query in queries]
+    
+    # The tokenizer applies the template to each message list in the batch.
+    # We don't add a generation prompt here, as the model.generate() call handles it.
+    prompt_batch = tokenizer.apply_chat_template(
+        messages_batch, tokenize=False, add_generation_prompt=True
+    )
+
+    # Tokenize the batch of prompts.
+    inputs = tokenizer(
+        prompt_batch, 
+        return_tensors="pt", 
+        padding=True, 
+        truncation=True
+    ).to(model.device)
+
+    # Generate responses for the entire batch at once.
+    # This is where the GPU's parallel processing power is used.
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=max_new_tokens,
+        do_sample=True, # Use sampling for more creative/varied outputs
+        temperature=0.6,
+        top_p=0.9,
+    )
+
+    # Decode the generated tokens back into text.
+    # We slice the output to only decode the newly generated tokens, not the input prompt.
+    input_token_len = inputs["input_ids"].shape[1]
+    generated_tokens = outputs[:, input_token_len:]
+    
+    generated_texts = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+
+    return generated_texts
+
+
 
 def last_token_pool(last_hidden_states: Tensor,
                  attention_mask: Tensor) -> Tensor:
