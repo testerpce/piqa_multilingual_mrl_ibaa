@@ -54,7 +54,7 @@ def load_hf_lm(name: str):
     return model, tokenizer
 
 
-def call_hf_llm_batch(model, tokenizer, queries: List[str], max_new_tokens: int = 512) -> List[str]:
+def call_hf_llm_batch(model, tokenizer, queries: List[str], max_new_tokens: int = 2048) -> List[str]:
     """
     Generates responses for a batch of queries using a Hugging Face model.
 
